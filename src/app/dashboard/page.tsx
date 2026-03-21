@@ -1,21 +1,22 @@
-// REMOVEMOS o "use client" daqui para ele ser um Server Component
+
 import { CarouselComp } from "@/components/carousel";
 import { Header } from "@/components/header";
-import slideImage from "@/assets/images/slide-login.png";
-import Image from "next/image";
-import React from "react";
 import { Footer } from "@/components/footer";
-
 import { EditProductDialog } from "@/components/edit-product-dialog";
 import { DeleteProductAlert } from "@/components/delete-product-alert";
 import { AddProductSheet } from "@/components/add-product-sheet";
+import { BuyButton } from "@/components/buy-button"; 
+
+import slideImage from "@/assets/images/slide-login.png";
+import Image from "next/image";
+import React from "react";
 
 // Importamos a conexão com o banco e a action de deletar
 import { prisma } from "@/lib/prisma"; 
 import { deleteProductAction } from "@/app/actions/product-actions";
 
 export default async function Dashboard() {
-  // BUSCA REAL DO BANCO DE DADOS
+  // BUSCA DO BANCO DE DADOS (Executa no Servidor)
   const produtos = await prisma.product.findMany({
     orderBy: { id: 'desc' } // Os novos aparecem primeiro
   });
@@ -30,19 +31,21 @@ export default async function Dashboard() {
         <section className="w-full max-w-7xl">
           <div className="p-4 md:p-8">
             
+            {/* Título e Botão de Adicionar */}
             <div className="flex justify-between items-center mb-8">
               <h1 className="text-2xl font-bold text-gray-800">Catálogo de Produtos</h1>
               <AddProductSheet />
             </div>
 
+            {/* Grid de Produtos */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               
               {produtos.map((product) => (
-                <div key={product.id} className="bg-white border border-gray-200 rounded-xl p-3 flex flex-col shadow-sm hover:shadow-md transition-shadow">
+                <div key={product.id} className=" cursor pointer! bg-white border border-gray-200 rounded-xl p-3 flex flex-col shadow-sm  transition-shadow">
                   
+                  {/* Imagem do Produto */}
                   <div className="relative aspect-square bg-gray-100 rounded-lg mb-3 overflow-hidden">
                     <Image 
-                      // Se o produto tiver imagem no banco, usa ela, senão usa o slideImage
                       src={product.image || slideImage} 
                       alt={product.name}
                       fill
@@ -50,27 +53,40 @@ export default async function Dashboard() {
                     />
                   </div>
                   
-                  <div className="flex flex-col mb-4">
-                    <h3 className="text-xs font-bold text-gray-700 truncate">{product.name}</h3>
-                    <p className="text-gray-900 font-extrabold text-lg">
-                      R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
 
+                  {/* Informações: Nome e Preço (Refinado com base na referência) */}
+<div className="flex flex-col mb-4 px-1 gap-1">
+  
+  {/* NOME DO PRODUTO: Em negrito, caixa alta, cinza escuro e truncado */}
+  <h3 className="text-[18px]! font-bold text-gray-700 truncate uppercase tracking-tight leading-tight" title={product.name}>
+    {product.name}
+  </h3>
+  
+  {/* PREÇO: Mais leve, cinza médio e tamanho normal */}
+  <p className="text-gray-500 font-normal text-[15px]">
+    A partir de R$ {Number(product.price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+  </p>
+</div>
+
+                  {/* Ações do Card */}
                   <div className="mt-auto flex flex-col gap-2">
-                    <button className="w-full bg-[#e60000] hover:bg-[#cc0000] text-white py-2 rounded text-sm font-bold transition-colors cursor-pointer shadow-sm">
-                      Comprar
-                    </button>
                     
+                    {/* Botão de Compra (Client Component com lógica do Zustand) */}
+                    <BuyButton product={{
+                      id: String(product.id),
+                      name: product.name,
+                      price: Number(product.price),
+                      image: product.image
+                    }} />
+                    
+                    {/* Botões de Edição e Exclusão */}
                     <div className="flex gap-2">
-                      {/* Passamos o produto do banco para o Dialog */}
                       <EditProductDialog product={{
                         ...product, 
                         id: String(product.id), 
                         price: String(product.price)
                       }} />
                       
-                      {/* Chamamos a Action do servidor diretamente no Confirm */}
                       <DeleteProductAlert 
                         productName={product.name} 
                         onConfirm={async () => {
@@ -83,10 +99,14 @@ export default async function Dashboard() {
                 </div>
               ))}
 
+              {/* Estado Vazio */}
               {produtos.length === 0 && (
-                <p className="col-span-full text-center text-gray-500 py-10">
-                  Nenhum produto cadastrado.
-                </p>
+                <div className="col-span-full flex flex-col items-center py-20 bg-white rounded-xl border-2 border-dashed border-gray-200">
+                  <p className="text-gray-500 font-medium text-lg">
+                    Nenhum produto encontrado no estoque.
+                  </p>
+                  <p className="text-sm text-gray-400">Comece adicionando um novo item acima.</p>
+                </div>
               )}
 
             </div>

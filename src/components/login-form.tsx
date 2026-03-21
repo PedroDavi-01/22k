@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
-import slideImage from "@/assets/images/slide-login.png"
+import slideImage from "@/assets/images/slide-forms.png"
 import { Mail } from 'lucide-react';
 
 export function LoginForm({
@@ -25,7 +25,7 @@ export function LoginForm({
               <div className="flex flex-col items-center gap-2 text-center mb-4">
                 <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
                 <p className="text-sm text-muted-foreground">
-                  Login to your MagazineP account
+                  Login to your account
                 </p>
               </div>
 

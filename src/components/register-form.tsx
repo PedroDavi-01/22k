@@ -9,8 +9,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import Image from "next/image"
-import slideImage from "@/assets/images/slide-login.png"
-import { Mail } from 'lucide-react';
+import slideImage from "@/assets/images/slide-forms.png"
 
 export function RegisterForm({
   className,
@@ -25,7 +24,7 @@ export function RegisterForm({
               <div className="flex flex-col items-center gap-2 text-center mb-4">
                 <h1 className="text-2xl font-bold tracking-tight">Create an account</h1>
                 <p className="text-sm text-muted-foreground">
-                  Create your MagazineP account
+                  Create your account
                 </p>
               </div>
 
