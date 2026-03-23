@@ -1,110 +1,97 @@
-'use client'
+"use client"
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { registerSchema, RegisterInput } from '@/lib/zod';
-import { signUp } from '@/app/actions/auth';
-import { useRouter } from 'next/navigation';
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import Image from "next/image"
+import slideImage from "@/assets/images/slide-forms.png"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { Loader2 } from "lucide-react"
+import { signUp } from "@/app/actions/auth" 
 
 export default function RegisterPage() {
-  const router = useRouter();
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
 
-  const { 
-    register, 
-    handleSubmit, 
-    formState: { errors, isSubmitting } 
-  } = useForm<RegisterInput>({
-    resolver: zodResolver(registerSchema),
-  });
+  const handleRegister = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
 
-  const onSubmit = async (data: RegisterInput) => {
-    const result = await signUp(data);
-    if (result.success) {
-      router.push('/login');
-      alert("Cadastro realizado com sucesso!");
-    } else {
-      alert(result.error || "Erro ao cadastrar");
+    try {
+      const formData = new FormData(e.currentTarget)
+      const data = Object.fromEntries(formData)
+
+      if (data.password !== data.confirmPassword) {
+        alert("As senhas não coincidem!")
+        setLoading(false)
+        return
+      }
+
+      const result = await signUp({
+        name: (data.email as string).split('@')[0],
+        email: data.email as string,
+        password: data.password as string,
+      })
+
+      if (result.success) {
+        alert("Conta criada com sucesso!")
+        router.push("/login")
+      } else {
+        alert(result.error || "Erro ao criar conta")
+        setLoading(false)
+      }
+    } catch (error) {
+      console.error(error)
+      alert("Erro inesperado")
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    // <--- Ajuste: min-h-screen e flex para centralizar na tela se necessário
-    <div className="flex min-h-screen items-center justify-center bg-white px-4"> 
-      <div className="max-w-md w-full p-8 bg-gray-900 rounded-xl shadow-2xl">
-        <h1 className="text-2xl font-bold text-white mb-6 text-center">Criar Conta</h1>
-        
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          {/* Campo de Nome */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-300">Nome</label>
-            <input
-              {...register("name")}
-              type="text"
-              placeholder="Seu nome completo"
-              // <--- Estilização: Borda sutil, fundo escuro sólido e foco destacado
-              className={`p-2.5 rounded-md bg-gray-800 border ${
-                errors.name ? 'border-red-500' : 'border-gray-700'
-              } text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all`}
-            />
-            {errors.name && (
-              <span className="text-xs text-red-400 mt-1">{errors.name.message}</span>
-            )}
-          </div>
+    <div className="flex min-h-screen w-full items-center justify-center bg-zinc-100 p-6">
+      <div className="w-full max-w-[750px] flex flex-col gap-4">
+        <Card className="overflow-hidden p-0 bg-white shadow-2xl border-none rounded-xl">
+          <CardContent className="grid p-0 md:grid-cols-2">
+            <form className="p-6 md:p-10" onSubmit={handleRegister}>
+              <FieldGroup className="gap-3">
+                <div className="flex flex-col items-center gap-1 text-center mb-4">
+                  <h1 className="text-xl font-bold tracking-tight text-zinc-900">Create account</h1>
+                  <p className="text-xs text-muted-foreground">Join us today</p>
+                </div>
 
-          {/* Campo de E-mail */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-300">E-mail</label>
-            <input
-              {...register("email")}
-              type="email"
-              placeholder="exemplo@email.com"
-              className={`p-2.5 rounded-md bg-gray-800 border ${
-                errors.email ? 'border-red-500' : 'border-gray-700'
-              } text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all`}
-            />
-            {errors.email && (
-              <span className="text-xs text-red-400 mt-1">{errors.email.message}</span>
-            )}
-          </div>
+                <Field>
+                  <FieldLabel htmlFor="email" className="text-xs font-semibold">Email</FieldLabel>
+                  <Input id="email" name="email" type="email" placeholder="m@example.com" required className="h-9 text-sm border-zinc-200" />
+                </Field>
 
-          {/* Campo de Senha */}
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-300">Senha</label>
-            <input
-              {...register("password")}
-              type="password"
-              placeholder="No mínimo 8 caracteres"
-              className={`p-2.5 rounded-md bg-gray-800 border ${
-                errors.password ? 'border-red-500' : 'border-gray-700'
-              } text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all`}
-            />
-            {errors.password && (
-              <span className="text-xs text-red-400 mt-1">{errors.password.message}</span>
-            )}
-          </div>
+                <Field>
+                  <FieldLabel htmlFor="password" className="text-xs font-semibold">Password</FieldLabel>
+                  <Input id="password" name="password" type="password" required className="h-9 text-sm border-zinc-200" />
+                </Field>
 
-          {/* Botão de Envio */}
-          <button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:opacity-50 p-3 rounded-md text-white font-bold transition-colors shadow-lg mt-2"
-          >
-            {isSubmitting ? "Cadastrando..." : "Criar Conta"}
-          </button>
+                <Field>
+                  <FieldLabel htmlFor="confirmPassword" className="text-xs font-semibold">Confirm Password</FieldLabel>
+                  <Input id="confirmPassword" name="confirmPassword" type="password" required className="h-9 text-sm border-zinc-200" />
+                </Field>
 
-          {/* Link para Login */}
-          <p className="text-center text-sm text-gray-400 mt-4">
-            Já tem uma conta?{' '}
-            <button 
-              type="button"
-              onClick={() => router.push('/login')}
-              className="text-blue-400 hover:text-blue-300 font-medium underline-offset-4 hover:underline"
-            >
-              Faça login
-            </button>
-          </p>
-        </form>
+                <Button type="submit" disabled={loading} className="w-full mt-2 font-bold rounded h-9 text-sm bg-zinc-900 text-white hover:bg-zinc-800 transition-all">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Create Account"}
+                </Button>
+
+                <FieldDescription className="text-center text-[11px] mt-2">
+                  Already have an account? <a href="/login" className="font-semibold underline">Login</a>
+                </FieldDescription>
+              </FieldGroup>
+            </form>
+
+            <div className="relative hidden md:block w-full h-full min-h-[380px]">
+              <Image src={slideImage} alt="Register" fill className="object-cover" priority />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
+  )
 }

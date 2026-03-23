@@ -8,72 +8,6 @@ import { NextAuthOptions } from "next-auth";
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const authOptions: NextAuthOptions = {
@@ -86,9 +20,9 @@ export const authOptions: NextAuthOptions = {
     EmailProvider({
       async sendVerificationRequest({ identifier: email, url }) {
         const { error } = await resend.emails.send({
-          from: 'onboarding@resend.dev', // ⚠️ Altere para seu domínio quando homologar
+          from: 'onboarding@resend.dev', //  Altere para seu domínio quando homologar
           to: email,
-          subject: 'Login na Loja de Motos 🏍️',
+          subject: 'Login na 22K Inc',
           html: `
             <div style="font-family: sans-serif; color: #333;">
               <h2>Olá!</h2>

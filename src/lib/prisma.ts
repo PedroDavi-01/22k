@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client"; // O tsconfig já aponta para a pasta certa
+import { PrismaClient } from "@prisma/client"; 
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 

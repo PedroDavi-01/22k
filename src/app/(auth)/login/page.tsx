@@ -1,157 +1,141 @@
-"use client";
+"use client"
 
-import { signIn } from "next-auth/react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Input } from "@/components/ui/input"
+import Image from "next/image"
+import slideImage from "@/assets/images/slide-forms.png"
+import { Mail, Loader2 } from 'lucide-react'
+import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
+import { useState, useRef } from "react"
 
 export default function LoginPage() {
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [emailLoading, setEmailLoading] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  // 1. Login com Senha (Credentials)
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
 
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
+    const formData = new FormData(e.currentTarget)
+    const email = formData.get("email")
+    const password = formData.get("password")
 
     const result = await signIn("credentials", {
       email,
       password,
       redirect: false,
-    });
+    })
 
     if (result?.error) {
-      setError("Email ou senha incorretos.");
-      setLoading(false);
+      alert("Email ou senha inválidos")
+      setLoading(false)
     } else {
-      router.push('/dashboard');
-      router.refresh();
+      router.push("/dashboard")
+      router.refresh()
     }
   }
 
-  // 1. Crie esta função dentro do seu componente LoginPage
-  async function handleMagicLink(e: React.MouseEvent<HTMLButtonElement>) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+  const handleMagicLink = async () => {
+    if (!formRef.current) return
 
-    // Pegamos o valor do input de email manualmente através do FormData ou useRef
-    const emailInput = document.getElementById("email") as HTMLInputElement;
-    const email = emailInput?.value;
+    const formData = new FormData(formRef.current)
+    const email = formData.get("email")
 
     if (!email) {
-      setError("Por favor, digite seu e-mail primeiro.");
-      setLoading(false);
-      return;
+      alert("Por favor, digite seu e-mail primeiro.")
+      return
     }
 
-    const result = await signIn("email", { 
-      email, 
-      redirect: false,
-      callbackUrl: "/dashboard" 
-    });
+    setEmailLoading(true)
+    try {
+      const result = await signIn("email", { 
+        email, 
+        redirect: false,
+        callbackUrl: "/dashboard" 
+      })
 
-    setLoading(false);
-
-    if (result?.error) {
-      setError("Erro ao enviar o link. Tente novamente.");
-    } else {
-      alert("Verifique seu e-mail! Enviamos um link de acesso para você.");
+      if (result?.ok && !result.error) {
+        alert("Verifique sua caixa de entrada! Enviamos um link de acesso.")
+      } else {
+        alert("Erro ao enviar e-mail. Verifique se o Resend está configurado.")
+      }
+    } catch (error) {
+      alert("Erro inesperado ao tentar enviar o link.")
+    } finally {
+      setEmailLoading(false)
     }
   }
 
   return (
-    // <--- MODIFICAÇÃO: Garante que o fundo da página inteira seja branco
-    <div className="flex min-h-screen flex-col justify-center px-6 py-12 lg:px-8 bg-white"> 
-      <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-        {/* <--- MODIFICAÇÃO: Texto em cinza escuro para contraste */}
-        <h2 className="mt-10 text-center text-2xl font-bold tracking-tight text-gray-900"> 
-          Entrar na sua conta
-        </h2>
-      </div>
+    <div className="flex min-h-screen w-full items-center justify-center bg-zinc-100 p-6">
+      <div className="w-full max-w-[750px] flex flex-col gap-4">
+        <Card className="overflow-hidden p-0 bg-white shadow-2xl border-none rounded-xl">
+          <CardContent className="grid p-0 md:grid-cols-2">
+            <form ref={formRef} className="p-6 md:p-10" onSubmit={handleSubmit}>
+              <FieldGroup className="gap-3">
+                <div className="flex flex-col items-center gap-1 text-center mb-4">
+                  <h1 className="text-xl font-bold tracking-tight text-zinc-900">Welcome back</h1>
+                  <p className="text-xs text-muted-foreground">Login to your account</p>
+                </div>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          
-          {error && (
-            // <--- MODIFICAÇÃO: Alertas mais visíveis em fundo claro
-            <div className="p-3 rounded bg-red-100 border border-red-400 text-red-700 text-sm text-center"> 
-              {error}
+                <Field>
+                  <FieldLabel htmlFor="email" className="text-xs font-semibold">Email</FieldLabel>
+                  <Input id="email" name="email" type="email" placeholder="m@example.com" required className="h-9 text-sm border-zinc-200" />
+                </Field>
+
+                <Field>
+                  <div className="flex items-center justify-between">
+                    <FieldLabel htmlFor="password" className="text-xs font-semibold">Password</FieldLabel>
+                    <a href="#" className="text-[10px] text-muted-foreground hover:underline">Forgot?</a>
+                  </div>
+                  <Input id="password" name="password" type="password" required className="h-9 text-sm border-zinc-200" />
+                </Field>
+
+                <Button type="submit" disabled={loading || emailLoading} className="w-full font-bold rounded h-9 text-sm bg-zinc-900 text-white hover:bg-zinc-800 mt-2 transition-colors">
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Login"}
+                </Button>
+
+                <div className="relative flex items-center py-2">
+                  <div className="flex-grow border-t border-zinc-100"></div>
+                  <span className="mx-2 flex-shrink text-[9px] font-bold uppercase tracking-widest text-zinc-400">Or</span>
+                  <div className="flex-grow border-t border-zinc-100"></div>
+                </div>
+
+                <Button 
+                  type="button"
+                  onClick={handleMagicLink}
+                  disabled={loading || emailLoading}
+                  variant="secondary" 
+                  className="w-full bg-zinc-50 hover:bg-zinc-100 text-zinc-900 border border-zinc-200 flex items-center justify-center gap-2 h-9 rounded"
+                >
+                  {emailLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      <span className="text-xs font-medium">Login with email</span>
+                      <Mail size={14} />
+                    </>
+                  )}
+                </Button>
+
+                <FieldDescription className="text-center text-[11px] mt-2">
+                  Don&apos;t have an account? <a href="/register" className="font-semibold underline">Sign up</a>
+                </FieldDescription>
+              </FieldGroup>
+            </form>
+
+            <div className="relative hidden md:block w-full h-full min-h-[350px]">
+              <Image src={slideImage} alt="Login Image" fill className="object-cover" priority />
             </div>
-          )}
-
-          <div>
-            {/* <--- MODIFICAÇÃO: Label em cinza escuro */}
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700"> 
-              Email
-            </label>
-            <div className="mt-2">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                // <--- MODIFICAÇÃO: Input com fundo claro (quase branco), borda sutil e texto escuro
-                className="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-1.5 text-base text-gray-900 outline-none placeholder:text-gray-400 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 sm:text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            {/* <--- MODIFICAÇÃO: Label em cinza escuro */}
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700"> 
-              Senha
-            </label>
-            <div className="mt-2">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                // <--- MODIFICAÇÃO: Input com fundo claro (quase branco), borda sutil e texto escuro
-                className="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-1.5 text-base text-gray-900 outline-none placeholder:text-gray-400 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 sm:text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50"
-            >
-              {loading ? "Carregando..." : "Sign in"}
-            </button>
-          </div>
-
-          {/* Divisor Visual (Opcional) */}
-          <div className="relative flex py-2 items-center">
-            {/* <--- MODIFICAÇÃO: Divisor mais visível em fundo claro */}
-            <div className="flex-grow border-t border-gray-200"></div> 
-            <span className="flex-shrink mx-4 text-gray-500 text-xs uppercase">Ou</span>
-            {/* <--- MODIFICAÇÃO: Divisor mais visível em fundo claro */}
-            <div className="flex-grow border-t border-gray-200"></div> 
-          </div>
-
-          {/* Botão de Magic Link */}
-          <div>
-            <button
-              onClick={handleMagicLink}
-              type="button"
-              disabled={loading}
-              // <--- MODIFICAÇÃO: Botão secundário com borda visível e texto escuro
-              className="flex w-full justify-center rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50" 
-            >
-              Receber link por e-mail
-            </button>
-          </div>
-
-        </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
-  );
+  )
 }
