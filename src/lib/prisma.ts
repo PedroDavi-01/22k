@@ -1,13 +1,22 @@
-import { PrismaClient } from "@/generated/prisma";
+import { PrismaClient } from "@prisma/client"; // O tsconfig já aponta para a pasta certa
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
-// 1. Cria a conexão nativa usando a URL do seu .env
+// Configuração do Pool de conexão nativa
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-// 2. Cria o adaptador que o Prisma 7 exige
+// Criar o adaptador para o Prisma
 const adapter = new PrismaPg(pool);
 
-// 3. Passa o adaptador no construtor. 
-// Isso resolve o erro de "non-empty options" e o erro de tipagem.
-export const prisma = new PrismaClient({ adapter });
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+
+// Inicialização com o adaptador para resolver o erro de "0 argumentos"
+export const prisma =
+  globalForPrisma.prisma ?? new PrismaClient({ adapter });
+
+if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+
+export default prisma;
