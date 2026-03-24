@@ -1,22 +1,21 @@
-import { PrismaClient } from "@prisma/client"; 
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
+import { Pool } from 'pg'
+import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaClient } from '@prisma/client'
 
-// Configuração do Pool de conexão nativa
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// 1. Instancie o Pool
+const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL 
+})
 
-// Criar o adaptador para o Prisma
-const adapter = new PrismaPg(pool as any);
+// 2. Tente esta conversão forçada (Double Casting)
+// Isso mata qualquer validação de tipo que esteja travando o build
+const adapter = new PrismaPg(pool as unknown as any) 
 
+// 3. O restante do seu código global
 const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+  prisma: PrismaClient | undefined
+}
 
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter })
 
-// Inicialização com o adaptador para resolver o erro de "0 argumentos"
-export const prisma =
-  globalForPrisma.prisma ?? new PrismaClient({ adapter });
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
-
-export default prisma;
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
