@@ -10,6 +10,7 @@ import { Mail, Loader2 } from 'lucide-react'
 import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { useState, useRef } from "react"
+import { toast } from "sonner"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -33,14 +34,20 @@ export default function LoginPage() {
     })
 
     if (result?.error) {
-      alert("Email ou senha inválidos")
+      toast.error("Email ou senha inválidos", {
+        description: "Verifique suas credenciais e tente novamente."
+      })
       setLoading(false)
     } else {
+      toast.success("Login realizado!", {
+        description: "Bem-vindo de volta, carregando seu painel..."
+      })
       router.push("/dashboard")
       router.refresh()
     }
   }
 
+  // 2. Login com Link Mágico
   const handleMagicLink = async () => {
     if (!formRef.current) return
 
@@ -48,7 +55,9 @@ export default function LoginPage() {
     const email = formData.get("email")
 
     if (!email) {
-      alert("Por favor, digite seu e-mail primeiro.")
+      toast.warning("E-mail necessário", {
+        description: "Por favor, digite seu e-mail para receber o link de acesso."
+      })
       return
     }
 
@@ -61,12 +70,19 @@ export default function LoginPage() {
       })
 
       if (result?.ok && !result.error) {
-        alert("Verifique sua caixa de entrada! Enviamos um link de acesso.")
+        toast.success("Verifique sua caixa de entrada!", {
+          description: "Enviamos um link de acesso para o seu e-mail.",
+          duration: 5000,
+        })
       } else {
-        alert("Erro ao enviar e-mail. Verifique se o Resend está configurado.")
+        toast.error("Erro ao enviar e-mail", {
+          description: "Verifique se o serviço de e-mail (Resend) está configurado."
+        })
       }
     } catch (error) {
-      alert("Erro inesperado ao tentar enviar o link.")
+      toast.error("Erro inesperado", {
+        description: "Não foi possível enviar o link no momento."
+      })
     } finally {
       setEmailLoading(false)
     }
@@ -92,7 +108,6 @@ export default function LoginPage() {
                 <Field>
                   <div className="flex items-center justify-between">
                     <FieldLabel htmlFor="password" className="text-xs font-semibold">Password</FieldLabel>
-                    <a href="#" className="text-[10px] text-muted-foreground hover:underline">Forgot?</a>
                   </div>
                   <Input id="password" name="password" type="password" required className="h-9 text-sm border-zinc-200" />
                 </Field>

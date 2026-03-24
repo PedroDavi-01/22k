@@ -7,5 +7,4 @@ export const registerSchema = z.object({
   password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
 })
 
-// O Tipo que o React Hook Form usa (O "RegisterInput" que você sentiu falta)
 export type RegisterInput = z.infer<typeof registerSchema>

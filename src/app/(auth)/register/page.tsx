@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
 import { signUp } from "@/app/actions/auth" 
+import { toast } from "sonner" 
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -23,8 +24,11 @@ export default function RegisterPage() {
       const formData = new FormData(e.currentTarget)
       const data = Object.fromEntries(formData)
 
+      // Validação de senha com Sonner
       if (data.password !== data.confirmPassword) {
-        alert("As senhas não coincidem!")
+        toast.error("As senhas não coincidem!", {
+          description: "Verifique os campos de senha e tente novamente."
+        })
         setLoading(false)
         return
       }
@@ -36,15 +40,26 @@ export default function RegisterPage() {
       })
 
       if (result.success) {
-        alert("Conta criada com sucesso!")
-        router.push("/login")
+        toast.success("Conta criada com sucesso!", {
+          description: "Bem-vindo a 22k! Redirecionando...",
+        })
+        
+        
+        setTimeout(() => {
+          router.push("/login")
+        }, 1500)
+        
       } else {
-        alert(result.error || "Erro ao criar conta")
+        toast.error(result.error || "Erro ao criar conta", {
+          description: "Tente usar um e-mail diferente ou verifique sua conexão."
+        })
         setLoading(false)
       }
     } catch (error) {
       console.error(error)
-      alert("Erro inesperado")
+      toast.error("Erro inesperado", {
+        description: "Ocorreu uma falha no servidor. Tente mais tarde."
+      })
       setLoading(false)
     }
   }

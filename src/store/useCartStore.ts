@@ -1,47 +1,89 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { toast } from "sonner"
 
-// Define o formato de um item dentro do carrinho
 export type CartItem = {
   id: string
   name: string
   price: number
   image?: string
+  quantity: number
+  ownerId: string
 }
 
-// Define TUDO o que a nossa "loja" (store) consegue fazer e armazenar
 interface CartState {
-  items: CartItem[] // Lista de produtos no carrinho
-  addItem: (item: CartItem) => void // Função para adicionar
-  removeItem: (id: string) => void // Função para remover um item específico
-  clearCart: () => void // Limpa o carrinho todo
-  total: () => number // Função que calcula a soma dos preços
+  items: CartItem[]
+  userId: string | null
+  setUserId: (id: string | null) => void
+  addItem: (item: Omit<CartItem, "quantity" | "ownerId">) => void
+  removeItem: (id: string) => void
+  clearCart: () => void
+  total: () => number
+  getUserItems: () => CartItem[]
 }
 
 export const useCartStore = create<CartState>()(
-  // O persist salva os dados no navegador (localStorage) para não sumir no F5
   persist(
     (set, get) => ({
-      items: [], // Começamos com o carrinho vazio
+      items: [],
+      userId: null,
 
-      // Adiciona um novo item mantendo os que já estavam lá (usando o ...state.items)
-      addItem: (item) => set((state) => ({ 
-        items: [...state.items, item] 
-      })),
+      setUserId: (id) => set({ userId: id }),
 
-      // Filtra a lista e remove apenas o item que tem o ID passado
-      removeItem: (id) => set((state) => ({ 
-        items: state.items.filter((i) => i.id !== id) 
-      })),
+      getUserItems: () => {
+        const { items, userId } = get()
+        return items.filter(item => item.ownerId === (userId || 'guest'))
+      },
 
-      // Reseta o array de itens para vazio
-      clearCart: () => set({ items: [] }),
+      addItem: (item) => {
+        const { userId, items } = get()
+        const currentOwner = userId || 'guest'
+        const existingItem = items.find((i) => i.id === item.id && i.ownerId === currentOwner)
 
-      // get() acessa o estado atual para somar os preços usando o .reduce()
-      total: () => get().items.reduce((acc, item) => acc + item.price, 0),
+        if (existingItem) {
+          set({
+            items: items.map((i) =>
+              (i.id === item.id && i.ownerId === currentOwner) 
+                ? { ...i, quantity: i.quantity + 1 } 
+                : i
+            ),
+          })
+          toast.success(`Mais um ${item.name} adicionado!`)
+        } else {
+          set({ items: [...items, { ...item, quantity: 1, ownerId: currentOwner }] })
+          toast.success(`${item.name} adicionado ao carrinho`)
+        }
+      },
+
+      removeItem: (id) => {
+        const { userId, items } = get()
+        const currentOwner = userId || 'guest'
+        const target = items.find(i => i.id === id && i.ownerId === currentOwner)
+
+        if (target && target.quantity > 1) {
+          set({
+            items: items.map((i) =>
+              (i.id === id && i.ownerId === currentOwner) ? { ...i, quantity: i.quantity - 1 } : i
+            ),
+          })
+        } else {
+          set({ items: items.filter((i) => !(i.id === id && i.ownerId === currentOwner)) })
+        }
+        toast.error("Item removido")
+      },
+
+      clearCart: () => {
+        const { userId, items } = get()
+        const currentOwner = userId || 'guest'
+        set({ items: items.filter(i => i.ownerId !== currentOwner) })
+      },
+
+      total: () => {
+        return get().getUserItems().reduce((acc, item) => acc + (item.price * item.quantity), 0)
+      },
     }),
-    { 
-      name: 'cart-storage' // Nome da "chave" que aparecerá no LocalStorage do navegador
+    {
+      name: 'magazine-pedro-v1',
     }
   )
 )
